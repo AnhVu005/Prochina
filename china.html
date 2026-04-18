@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Học HSK 1 - Game Ghép Câu</title>
+    <style>
+        :root { --primary: #e74c3c; --secondary: #2c3e50; --success: #27ae60; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        /* Style cho Game */
+        .game-section { background: #fff3f3; border: 2px dashed var(--primary); padding: 20px; border-radius: 10px; margin-bottom: 30px; text-align: center; }
+        .word-pool, .answer-zone { min-height: 50px; padding: 10px; border-radius: 8px; margin: 10px 0; display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
+        .word-pool { background: #fdfdfd; border: 1px solid #ddd; }
+        .answer-zone { background: #fff; border: 2px solid var(--secondary); }
+        
+        .word-card { background: white; border: 2px solid var(--secondary); padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 1.2rem; transition: 0.2s; }
+        .word-card:hover { background: var(--secondary); color: white; }
+        
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-check { background: var(--success); color: white; }
+        .btn-next { background: var(--primary); color: white; margin-top: 10px; }
+        
+        /* Table Style */
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: var(--secondary); color: white; padding: 12px; }
+        td { border-bottom: 1px solid #eee; padding: 12px; text-align: center; }
+        .hanzi { font-size: 20px; font-weight: bold; color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎮 Mini Game: Ghép Câu HSK 1</h1>
+    
+    <div class="game-section">
+        <h3 id="game-meaning">Dịch câu này: "Tôi là người Việt Nam"</h3>
+        
+        <div class="answer-zone" id="answerZone">
+            </div>
+        
+        <div class="word-pool" id="wordPool">
+            </div>
+        
+        <button class="btn btn-check" onclick="checkAnswer()">Kiểm tra</button>
+        <button class="btn btn-next" onclick="nextQuestion()">Câu tiếp theo ➔</button>
+        <p id="game-feedback"></p>
+    </div>
+
+    <hr>
+
+    <h1>Từ Vựng HSK 1</h1>
+    <table id="vocabTable">
+        <thead>
+            <tr>
+                <th>Hán Tự</th>
+                <th>Pinyin</th>
+                <th>Nghĩa</th>
+                <th>Nghe</th>
+            </tr>
+        </thead>
+        <tbody id="vocabBody"></tbody>
+    </table>
+</div>
+
+<script>
+    // 1. Dữ liệu Game (Câu mẫu HSK 1)
+    const quizData = [
+        { sentence: ["我", "是", "人"], meaning: "Tôi là người", full: "我是人" },
+        { sentence: ["他", "不", "在", "家"], meaning: "Anh ấy không ở nhà", full: "他不在家" },
+        { sentence: ["你", "好", "吗"], meaning: "Bạn khỏe không?", full: "你好吗" },
+        { sentence: ["我", "喜欢", "喝", "茶"], meaning: "Tôi thích uống trà", full: "我喜欢喝茶" },
+        { sentence: ["她", "很", "漂亮"], meaning: "Cô ấy rất đẹp", full: "她很漂亮" }
+    ];
+
+    let currentQuestion = 0;
+    let userPath = [];
+
+    // 2. Khởi tạo Game
+    function initGame() {
+        const data = quizData[currentQuestion];
+        document.getElementById('game-meaning').innerText = `Dịch câu này: "${data.meaning}"`;
+        document.getElementById('game-feedback').innerText = "";
+        document.getElementById('answerZone').innerHTML = "";
+        userPath = [];
+
+        // Xáo trộn từ
+        let shuffled = [...data.sentence].sort(() => Math.random() - 0.5);
+        
+        const pool = document.getElementById('wordPool');
+        pool.innerHTML = "";
+        shuffled.forEach(word => {
+            const span = document.createElement('div');
+            span.className = 'word-card';
+            span.innerText = word;
+            span.onclick = () => selectWord(word, span);
+            pool.appendChild(span);
+        });
+    }
+
+    function selectWord(word, element) {
+        if (element.style.display === "none") return;
+        
+        userPath.push(word);
+        element.style.display = "none"; // Ẩn từ ở kho
+        
+        const ansSpan = document.createElement('div');
+        ansSpan.className = 'word-card';
+        ansSpan.innerText = word;
+        ansSpan.onclick = () => {
+            // Cho phép click để hoàn tác
+            userPath = userPath.filter(w => w !== word);
+            ansSpan.remove();
+            element.style.display = "block";
+        };
+        document.getElementById('answerZone').appendChild(ansSpan);
+    }
+
+    function checkAnswer() {
+        const correct = quizData[currentQuestion].sentence.join("");
+        const user = userPath.join("");
+        const feedback = document.getElementById('game-feedback');
+
+        if (user === correct) {
+            feedback.innerText = "🎉 Chính xác! 太好了 (Tài hǎole)";
+            feedback.style.color = "green";
+            playAudio(correct);
+        } else {
+            feedback.innerText = "❌ Chưa đúng, thử lại nhé!";
+            feedback.style.color = "red";
+        }
+    }
+
+    function nextQuestion() {
+        currentQuestion = (currentQuestion + 1) % quizData.length;
+        initGame();
+    }
+
+    // 3. Dữ liệu Bảng Từ Vựng
+    const vocabData = [
+        {hz: "我", py: "wǒ", vi: "Tôi"},
+        {hz: "是", py: "shì", vi: "Là"},
+        {hz: "在", py: "zài", vi: "Ở / Tại"},
+        {hz: "好", py: "hǎo", vi: "Tốt / Khỏe"},
+        {hz: "喝", py: "hē", vi: "Uống"}
+    ];
+
+    function renderTable() {
+        const body = document.getElementById('vocabBody');
+        body.innerHTML = vocabData.map(item => `
+            <tr>
+                <td class="hanzi">${item.hz}</td>
+                <td>${item.py}</td>
+                <td>${item.vi}</td>
+                <td><button onclick="playAudio('${item.hz}')">🔊</button></td>
+            </tr>
+        `).join('');
+    }
+
+    function playAudio(text) {
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'zh-CN';
+        window.speechSynthesis.speak(msg);
+    }
+
+    // Chạy khi trang web load
+    window.onload = () => {
+        initGame();
+        renderTable();
+    };
+</script>
+
+</body>
+</html>
